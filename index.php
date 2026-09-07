@@ -111,9 +111,9 @@
                             <p>Our community helps flag unhelpful or abusive content to maintain quality.</p>
                         </div>
                     </div>
-
-                    <button class="btn btn-brand px-4 py-2 mt-2" href="/pages/search.html">Start Browsing
-                        Professors</button>
+                    <a href="pages/search.php">
+                        <button class="btn btn-brand px-4 py-2 mt-2">Start Browsing Professors</button>
+                    </a>
                 </div>
                 <div class="col-lg-6 d-none d-lg-block"></div>
             </div>
