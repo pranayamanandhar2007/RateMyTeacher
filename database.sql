@@ -1,5 +1,5 @@
-CREATE DATABASE rate_my_professor;
-USE rate_my_professor;
+CREATE DATABASE rate_my_teacher;
+USE rate_my_teacher;
 
 CREATE TABLE students (
     s_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -8,9 +8,9 @@ CREATE TABLE students (
     s_semester VARCHAR(20) NOT NULL
 );
 
-CREATE TABLE professors (
-    p_id INT AUTO_INCREMENT PRIMARY KEY,
-    p_name VARCHAR(100) NOT NULL
+CREATE TABLE teachers (
+    t_id INT AUTO_INCREMENT PRIMARY KEY,
+    t_name VARCHAR(100) NOT NULL
 );
 
 CREATE TABLE subjects (
@@ -28,6 +28,7 @@ CREATE TABLE admin (
 
 CREATE TABLE ratings (
     r_id INT AUTO_INCREMENT PRIMARY KEY,
+
     quality_rating INT NOT NULL,
     difficulty_rating INT NOT NULL,
     take_again VARCHAR(10) NOT NULL,
@@ -37,16 +38,16 @@ CREATE TABLE ratings (
     semester VARCHAR(20) NOT NULL,
 
     s_id INT NOT NULL,
-    p_id INT NOT NULL,
+    t_id INT NOT NULL,
     subject_id INT NOT NULL,
     admin_id INT NULL,
 
     FOREIGN KEY (s_id) REFERENCES students(s_id),
-    FOREIGN KEY (p_id) REFERENCES professors(p_id),
+    FOREIGN KEY (t_id) REFERENCES teachers(t_id),
     FOREIGN KEY (subject_id) REFERENCES subjects(subject_id),
-    FOREIGN KEY (admin_id) REFERENCES admin (admin_id)
+    FOREIGN KEY (admin_id) REFERENCES admin(admin_id)
 );
 
--- Sample admin account
+-- Sample admin
 INSERT INTO admin (username, password)
 VALUES ('admin', 'admin123');
