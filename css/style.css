@@ -250,3 +250,226 @@ footer p.copyright {
     color: var(--muted);
     margin-top: 1rem;
 }
+
+
+
+< !--============Search============-->
+
+/* ============ Search Page ============ */
+.page-header {
+    background-color: var(--bg-soft);
+    padding: 2.5rem 0 2rem;
+}
+
+.page-title {
+    font-weight: 800;
+    font-size: 2rem;
+}
+
+.search-page-bar {
+    border: 1px solid var(--line) !important;
+    background-color: #fff;
+    overflow: hidden;
+}
+
+.search-page-bar .form-control {
+    border: none;
+    box-shadow: none;
+    padding: 0.85rem 1.2rem;
+}
+
+.search-page-bar .form-control:focus {
+    box-shadow: none;
+}
+
+.search-page-bar .input-group-text {
+    background-color: #fff;
+    border: none;
+    color: var(--muted);
+}
+
+/* Filters sidebar */
+.filters-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+}
+
+.filter-label {
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 0.92rem;
+    margin-bottom: 0.6rem;
+}
+
+.form-select-custom {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.55rem 0.9rem;
+}
+
+.form-check-custom .form-check-input {
+    border-color: var(--line);
+}
+
+.form-check-custom .form-check-input:checked {
+    background-color: var(--brand);
+    border-color: var(--brand);
+}
+
+.form-check-custom label {
+    color: var(--ink);
+    font-size: 0.95rem;
+}
+
+.difficulty-pills {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.difficulty-pill {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.35rem 1rem;
+    font-size: 0.88rem;
+    color: var(--ink);
+    background-color: #fff;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.difficulty-pill:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+}
+
+.difficulty-pill.active {
+    border-color: var(--brand);
+    color: var(--brand);
+    background-color: var(--bg-tint);
+}
+
+.clear-filters {
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.clear-filters:hover {
+    color: var(--brand);
+}
+
+/* Results */
+.results-meta {
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.sort-link {
+    color: var(--brand);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.professor-card {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.3rem 1.5rem;
+    background-color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.professor-card:hover {
+    border-color: var(--brand);
+    box-shadow: 0 6px 16px rgba(41, 82, 227, 0.08);
+}
+
+.professor-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 0.1rem;
+}
+
+.professor-course {
+    color: var(--ink);
+    font-size: 0.95rem;
+    margin-bottom: 0.35rem;
+}
+
+.professor-meta {
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
+.professor-meta span+span {
+    margin-left: 0.6rem;
+    padding-left: 0.6rem;
+    border-left: 1px solid var(--line);
+}
+
+.professor-rating {
+    text-align: right;
+    min-width: 90px;
+}
+
+.professor-rating .score {
+    color: var(--brand);
+    font-weight: 800;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.professor-rating .label {
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+/* Pagination */
+.pagination-custom {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.25rem;
+    color: var(--ink);
+}
+
+.pagination-custom a {
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.pagination-custom a:hover {
+    color: var(--brand);
+}
+
+.page-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.page-number:hover {
+    background-color: var(--bg-tint);
+}
+
+.page-number.active {
+    background-color: var(--brand);
+    color: #fff;
+    font-weight: 600;
+}
