@@ -13,31 +13,13 @@
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Our own custom styles (must come AFTER bootstrap) -->
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg bg-white py-3">
-        <div class="container">
-            <a class="navbar-brand brand-name" href="#">Rate My Teacher</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navContent">
-                <ul class="navbar-nav mx-auto">
-                    <li class="nav-item"><a class="nav-link nav-link-custom active" href="#">Browse</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">Top Lists</a></li>
-                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#">About</a></li>
-                </ul>
-                <div class="d-flex align-items-center gap-3">
-                    <a href="#" class="nav-link-custom text-decoration-none">Sign In</a>
-                    <button class="btn btn-brand px-3">Register</button>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <?php include('includes/navbar.php'); ?>
 
     <!-- Hero -->
     <section class="hero">
@@ -139,33 +121,7 @@
     </section>
 
     <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-5 mb-4 mb-lg-0">
-                    <div class="brand-name mb-2">Rate My Teacher</div>
-                    <p class="copyright">© 2026 Rate My Teacher Academic. All rights reserved.</p>
-                </div>
-                <div class="col-6 col-lg-2">
-                    <h6>Platform</h6>
-                    <a href="#">Browse</a>
-                    <a href="#">Top Lists</a>
-                    <a href="#">Schools</a>
-                </div>
-                <div class="col-6 col-lg-2">
-                    <h6>Legal</h6>
-                    <a href="#">Privacy</a>
-                    <a href="#">Terms</a>
-                    <a href="#">Guidelines</a>
-                </div>
-                <div class="col-6 col-lg-2">
-                    <h6>Support</h6>
-                    <a href="#">Help Center</a>
-                    <a href="#">Contact</a>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <?php include('includes/footer.php'); ?>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 </body>
