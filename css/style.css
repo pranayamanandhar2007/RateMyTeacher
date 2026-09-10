@@ -378,9 +378,11 @@ footer p.copyright {
     border-radius: 10px;
     padding: 1.3rem 1.5rem;
     background-color: #fff;
+    color: inherit;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    text-decoration: none;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 

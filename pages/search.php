@@ -13,7 +13,7 @@
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Our own custom styles (must come AFTER bootstrap) -->
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../css/style.css">
 </head>
 
 <body>
@@ -41,7 +41,7 @@
     <!-- Page header + search -->
     <section class="page-header">
         <div class="container">
-            <h1 class="page-title mb-3">Search Professors</h1>
+            <h1 class="page-title mb-3">Search Teachers</h1>
             <div class="input-group input-group-lg rounded-pill search-page-bar" style="max-width: 100%;">
                 <span class="input-group-text ps-4"><i class="fa-solid fa-magnifying-glass"></i></span>
                 <input class="form-control" type="search" value="Computer Science" aria-label="Search">
@@ -101,9 +101,9 @@
 
                     <div class="d-flex flex-column gap-3">
 
-                        <div class="professor-card">
+                        <a href="professor-profile.php" class="professor-card">
                             <div>
-                                <div class="professor-name">Teksan Gharti Magar</div>
+                                <div class="professor-name">Sushil Ghimire</div>
                                 <div class="professor-course">Web Technology</div>
                                 <div class="professor-meta">
                                     <span>Difficulty: 3.2</span>
@@ -114,7 +114,7 @@
                                 <div class="score">4.9</div>
                                 <div class="label">RATING</div>
                             </div>
-                        </div>
+                        </a>
 
                         <div class="professor-card">
                             <div>

@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rate Dr. Bhanu Bhakta Aacharya · Rate My Teacher</title>
+<title>Rate Sushil Ghimire · Rate My Teacher</title>
 
 <!-- Bootstrap CSS -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <!-- Bootstrap Icons (used as a stand-in for the Figma icon assets, which couldn't be downloaded in this environment) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-<link rel="stylesheet" href="rating.css">
+<link rel="stylesheet" href="../css/rating.css">
 <!-- Google Fonts: Manrope (headings) + Inter (body) to match the Figma type styles -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -46,10 +46,10 @@
 
     <!-- Page header -->
     <section class="mb-4">
-      <a href="professor-profile.html" class="back-link mb-2">
+      <a href="professor-profile.php" class="back-link mb-2">
         <i class="bi bi-arrow-left"></i> Back to Profile
       </a>
-      <h1 class="page-title mt-2 mb-2">Rate <span class="prof-name">Dr. Bhanu Bhakta Aacharya</span></h1>
+      <h1 class="page-title mt-2 mb-2">Rate <span class="prof-name">Sushil Ghimire</span></h1>
       <p class="page-subtitle mb-0">Your feedback helps others make informed decisions. Please be honest and direct.</p>
     </section>
 
@@ -235,7 +235,7 @@
     }
 
     const payload = {
-      professor: 'Dr. Bhanu Bhakta Aacharya',
+      professor: 'Sushil ghimire',
       quality: Number(selections.quality),
       difficulty: Number(selections.difficulty),
       takeAgain: selections.takeAgain === 'yes',
