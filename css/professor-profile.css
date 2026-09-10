@@ -1,0 +1,309 @@
+  :root{
+    --brand-blue: #1b4ddb;
+    --ink: #1a1b24;
+    --body-text: #434655;
+    --muted: #747686;
+    --border: #c4c5d7;
+    --bg: #fbf8ff;
+    --footer-bg: #e2e1ee;
+    --search-bg: #f4f2ff;
+  }
+
+  body{
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, .brand-font{
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+  }
+
+  /* ---------- Header ---------- */
+  .site-header{
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background-color: rgba(251, 248, 255, 0.95);
+    backdrop-filter: blur(2px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand-link{
+    color: var(--brand-blue);
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.6px;
+    text-decoration: none;
+  }
+
+  .site-header .nav-link{
+    color: var(--body-text);
+    font-size: 1rem;
+    padding: 0;
+  }
+
+  .site-header .nav-link:hover{
+    color: var(--brand-blue);
+  }
+
+  .search-wrap{
+    position: relative;
+    width: 256px;
+  }
+
+  .search-wrap input{
+    background-color: var(--search-bg);
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    padding: 9px 17px 10px 41px;
+    font-size: 0.75rem;
+    width: 100%;
+  }
+
+  .search-wrap input:focus{
+    box-shadow: 0 0 0 0.15rem rgba(27,77,219,.2);
+    border-color: var(--brand-blue);
+  }
+
+  .search-wrap i{
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .btn-brand{
+    background-color: var(--brand-blue);
+    color: #fff;
+    border-radius: 9999px;
+    font-weight: 700;
+    border: none;
+    white-space: nowrap;
+  }
+
+  .btn-brand:hover{
+    background-color: #163fae;
+    color: #fff;
+  }
+
+  /* ---------- Hero / professor header ---------- */
+  .eyebrow{
+    color: var(--brand-blue);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+
+  .prof-name{
+    font-size: 4rem;
+    line-height: 1.1;
+    letter-spacing: -1.4px;
+    margin-bottom: 0;
+  }
+
+  .rating-card{
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+    padding: 17px 25px 19px;
+    text-align: center;
+    min-width: 108px;
+  }
+
+  .rating-card .score{
+    color: var(--brand-blue);
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: -0.96px;
+    line-height: 1;
+  }
+
+  .rating-card .label{
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: -0.6px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* ---------- Stats bar ---------- */
+  .stats-bar{
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 33px 0;
+  }
+
+  .stats-bar .stat{
+    font-size: 1.25rem;
+    color: var(--ink);
+  }
+
+  /* ---------- Reviews ---------- */
+  .section-title{
+    font-size: 1.5rem;
+    font-weight: 800;
+  }
+
+  .sort-label{
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .sort-select{
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font-size: 1rem;
+    font-family: inherit;
+    padding-right: 4px;
+  }
+
+  .sort-select:focus{
+    outline: none;
+    box-shadow: none;
+  }
+
+  .review-card{
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+    padding: 25px;
+  }
+
+  .review-course{
+    color: var(--brand-blue);
+    font-weight: 800;
+    font-size: 1.25rem;
+    margin-bottom: 0;
+  }
+
+  .review-date{
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .score-pill{
+    background-color: var(--brand-blue);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: 9999px;
+    padding: 4px 12px;
+    white-space: nowrap;
+    height: fit-content;
+  }
+
+  .review-meta{
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .review-meta strong{
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .review-body{
+    color: var(--body-text);
+    font-size: 1rem;
+    line-height: 1.625;
+    margin-bottom: 0;
+  }
+
+  .review-footer{
+    border-top: 1px solid var(--border);
+    padding-top: 17px;
+  }
+
+  .helpful-btn, .report-btn{
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0;
+  }
+
+  .helpful-btn:hover, .report-btn:hover{
+    color: var(--brand-blue);
+  }
+
+  .helpful-btn.active{
+    color: var(--brand-blue);
+  }
+
+  .more-reviews-btn{
+    background: none;
+    border: none;
+    color: var(--brand-blue);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+
+  /* ---------- Footer ---------- */
+  .site-footer{
+    background-color: var(--footer-bg);
+    border-top: 1px solid var(--border);
+    padding: 49px 0 48px;
+  }
+
+  .footer-brand{
+    color: var(--brand-blue);
+    font-weight: 800;
+    font-size: 1.5rem;
+  }
+
+  .footer-copy{
+    color: var(--body-text);
+    font-size: 0.75rem;
+    max-width: 320px;
+  }
+
+  .footer-heading{
+    color: var(--ink);
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .footer-list{
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .footer-list li{
+    margin-bottom: 8px;
+  }
+
+  .footer-list a{
+    color: var(--body-text);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .footer-list a:hover{
+    color: var(--brand-blue);
+    text-decoration: underline;
+  }
+
+  @media (max-width: 767px){
+    .prof-name{ font-size: 2.5rem; }
+    .stats-bar .row > div{ margin-bottom: 1rem; }
+    .search-wrap{ display: none; }
+  }
