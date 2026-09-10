@@ -111,15 +111,14 @@
                             <p>Our community helps flag unhelpful or abusive content to maintain quality.</p>
                         </div>
                     </div>
-<<<<<<< HEAD
-                    <a href="pages/search.php">
+                    <<<<<<< HEAD <a href="pages/search.php">
                         <button class="btn btn-brand px-4 py-2 mt-2">Start Browsing Professors</button>
-                    </a>
-=======
+                        </a>
+                        =======
 
-                    <a href="pages/search.php"><button class="btn btn-brand px-4 py-2 mt-2">Start Browsing
-                            Professors</button></a>
->>>>>>> 9e3804f (register)
+                        <a href="pages/search.php"><button class="btn btn-brand px-4 py-2 mt-2">Start Browsing
+                                Professors</button></a>
+                        >>>>>>> 9e3804f (register)
                 </div>
                 <div class="col-lg-6 d-none d-lg-block"></div>
             </div>
