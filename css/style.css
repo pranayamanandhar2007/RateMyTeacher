@@ -91,7 +91,7 @@ body {
 }
 
 .hero-title {
-    font-weight: 800;
+    font-weight: 800 !important;
     letter-spacing: -0.02em;
 }
 
@@ -251,7 +251,9 @@ footer p.copyright {
     margin-top: 1rem;
 }
 
-/* ============ Search Page ============ */
+
+
+
 .page-header {
     background-color: var(--bg-soft);
     padding: 2.5rem 0 2rem;
