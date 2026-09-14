@@ -1,3 +1,31 @@
+<?php
+require_once __DIR__ . '/../config/dbconn.php';
+require_once __DIR__ . '/../includes/auth.php';
+
+$errorMessage = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['s_email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $course = trim($_POST['s_course'] ?? 'BCA');
+    $enrollmentYear = filter_input(INPUT_POST, 'enrollment_year', FILTER_VALIDATE_INT);
+
+    if (!isKmcenEmail($email) || $course === '' || !$enrollmentYear || $enrollmentYear < 2000 || $enrollmentYear > (int) date('Y') || strlen($password) < 8) {
+        $errorMessage = 'Use a valid KMC email ending in @kmcen.edu.np, course, enrollment year, and password of at least 8 characters.';
+    } else {
+        $statement = mysqli_prepare($conn, 'INSERT INTO students (s_course, enrollment_year, s_email, password_hash) VALUES (?, ?, ?, ?)');
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        mysqli_stmt_bind_param($statement, 'siss', $course, $enrollmentYear, $email, $passwordHash);
+        if (mysqli_stmt_execute($statement)) {
+            $_SESSION['s_id'] = mysqli_insert_id($conn);
+            $_SESSION['s_email'] = $email;
+            header('Location: search.php');
+            exit;
+        }
+        $errorMessage = mysqli_errno($conn) === 1062 ? 'That email is already registered.' : 'The account could not be created.';
+        mysqli_stmt_close($statement);
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -35,27 +63,7 @@
             <h1 class="title">Join Rate My Teacher</h1>
 
             <!-- Form -->
-            <form id="registerForm" class="pt-2" novalidate>
-
-                <!-- Display Name -->
-                <div class="field-block">
-                    <label for="displayName" class="field-label">Username</label>
-                    <div class="input-icon-wrap">
-                        <span class="leading-icon">
-                            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M8 8A3.5 3.5 0 1 0 8 1a3.5 3.5 0 0 0 0 7Zm0 1.5c-2.67 0-6 1.34-6 4V15h12v-1.5c0-2.66-3.33-4-6-4Z"
-                                    fill="currentColor" />
-                            </svg>
-                        </span>
-                        <input type="text" class="form-control" id="displayName" placeholder="e.g. QuantumScholar24"
-                            required>
-                    </div>
-                    <div class="helper-text">
-
-                        <span>Your real name is never shown publicly.</span>
-                    </div>
-                </div>
+            <form id="registerForm" class="pt-2" method="post" action="register.php" novalidate>
 
                 <!-- University Email -->
                 <div class="field-block">
@@ -69,13 +77,30 @@
                                     stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                         </span>
-                        <input type="email" class="form-control" id="universityEmail" placeholder="you@university.edu"
-                            required>
+                        <input type="email" class="form-control" id="universityEmail" name="s_email" placeholder="you@kmcen.edu.np"
+                            pattern="^[^@\s]+@kmcen\.edu\.np$" required>
                     </div>
                     <div class="helper-text">
 
-                        <span>Used only for student verification badge.</span>
+                        <span>Use your KMC email ending in @kmcen.edu.np.</span>
                     </div>
+                </div>
+
+                <div class="field-block">
+                    <label for="course" class="field-label">Course</label>
+                    <select class="form-control" id="course" name="s_course" required>
+                        <option value="">Select your course</option>
+                        <option value="BCA">BCA</option>
+                        <option value="BBA">BBA</option>
+                        <option value="BBM">BBM</option>
+                        <option value="BA/BBS">BA/BBS</option>
+                    </select>
+                </div>
+
+                <div class="field-block">
+                    <label for="enrollmentYear" class="field-label">Course Enrollment Year</label>
+                    <input class="form-control" type="number" id="enrollmentYear" name="enrollment_year"
+                        min="2000" max="<?= (int) date('Y') ?>" placeholder="e.g. <?= (int) date('Y') - 1 ?>" required>
                 </div>
 
                 <!-- Password -->
@@ -89,7 +114,7 @@
                                 <path d="M5 7V4.5a3 3 0 0 1 6 0V7" stroke="currentColor" stroke-width="1.2" />
                             </svg>
                         </span>
-                        <input type="password" class="form-control" id="password" placeholder="At least 8 characters"
+                        <input type="password" class="form-control" id="password" name="password" placeholder="At least 8 characters"
                             required minlength="8" style="padding-right:40px;">
                         <button type="button" class="toggle-visibility" id="togglePassword"
                             aria-label="Toggle password visibility">
@@ -107,7 +132,7 @@
                 <div class="terms-row form-check">
                     <input class="form-check-input" type="checkbox" id="agreeTerms" required>
                     <label class="form-check-label" for="agreeTerms">
-                        I agree to the <a href="#">Community Guidelines</a> and <a href="#">Terms of Service</a>,
+                        I agree to the <a href="../index.php#about">Community Guidelines</a> and <a href="../index.php#about">Terms of Service</a>,
                         and pledge to post honest, constructive reviews.
                     </label>
                 </div>
@@ -121,6 +146,7 @@
                     </svg>
                 </button>
             </form>
+            <?php if ($errorMessage): ?><div class="alert alert-danger mt-3" role="alert"><?= htmlspecialchars($errorMessage) ?></div><?php endif; ?>
 
             <!-- Trust badge -->
             <div class="trust-badge">
@@ -133,7 +159,7 @@
 
             <!-- Login redirect -->
             <div class="login-row">
-                Already have an account? <a href="#">Log in</a>
+                Already have an account? <a href="login.php">Log in</a>
             </div>
 
         </div>
@@ -146,7 +172,7 @@
             if (window.history.length > 1) {
                 window.history.back();
             } else {
-                alert('Back pressed — wire this up to your previous page/route.');
+                window.location.href = 'search.php';
             }
         });
 
@@ -200,18 +226,12 @@
             strengthLabel.style.color = color;
         });
 
-        // Basic client-side validation on submit
         document.getElementById('registerForm').addEventListener('submit', (e) => {
-            e.preventDefault();
             const form = e.target;
             if (!form.checkValidity()) {
+                e.preventDefault();
                 form.classList.add('was-validated');
-                return;
             }
-            alert('Account created! (This is a front-end demo — hook this up to your backend.)');
-            form.reset();
-            strengthFill.style.width = '0%';
-            strengthLabel.textContent = 'Password strength';
         });
     </script>
 </body>

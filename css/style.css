@@ -473,3 +473,24 @@ footer p.copyright {
     color: #fff;
     font-weight: 600;
 }
+
+.account-email {
+    max-width: 260px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.btn-logout {
+    background-color: #dc3545 !important;
+    color: #fff !important;
+    border: 2px solid #dc3545 !important;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.btn-logout:hover {
+    background-color: #b02a37 !important;
+    border-color: #b02a37 !important;
+    color: #fff !important;
+}

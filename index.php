@@ -27,11 +27,10 @@
             <h1 class="display-5 hero-title mb-4">Bring transparency to higher education.</h1>
             <p class="hero-subtitle mb-4">Find your professor, read honest reviews, and share your own experiences.
                 Simple, verified, and community-driven.</p>
-            <div class="input-group rounded-pill hero-search mx-auto mb-4" style="max-width: 600px;">
-                <input class="form-control" type="search" placeholder="Search for a professor or department"
-                    aria-label="Search">
+            <form class="input-group rounded-pill hero-search mx-auto mb-4" style="max-width: 600px;" method="get" action="pages/search.php">
+                <input class="form-control" type="search" name="q" placeholder="Search for a professor or department" aria-label="Search teachers">
                 <button class="btn btn-brand rounded-pill px-4 m-1" type="submit">Search</button>
-            </div>
+            </form>
 
             <div class="trust-row d-flex justify-content-center flex-wrap">
                 <span><i class="fa-solid fa-certificate"></i>2M+ Reviews</span>
@@ -46,43 +45,43 @@
         <div class="container">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="section-title mb-0">Popular Courses</h2>
-                <a href="#" class="view-all">View all</a>
+                <a href="pages/search.php" class="view-all">View all</a>
             </div>
             <div class="row g-3">
                 <div class="col-6 col-md-3">
-                    <div class="course-card">
+                    <a href="pages/search.php?course=BCA" class="course-card text-decoration-none d-block">
                         <div class="course-icon"><i class="fa-solid fa-laptop"></i></div>
                         <h5>BCA</h5>
                         <p>400+ Reviews</p>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="course-card">
+                    <a href="pages/search.php?course=BBA" class="course-card text-decoration-none d-block">
                         <div class="course-icon"><i class="fa-solid fa-chart-line"></i></div>
                         <h5>BBA</h5>
                         <p>900+ Reviews</p>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="course-card">
+                    <a href="pages/search.php?course=BBM" class="course-card text-decoration-none d-block">
                         <div class="course-icon"><i class="fa-solid fa-briefcase"></i></div>
                         <h5>BBM</h5>
                         <p>200+ Reviews</p>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="course-card">
+                    <a href="pages/search.php?course=BA%2FBBS" class="course-card text-decoration-none d-block">
                         <div class="course-icon"><i class="fa-solid fa-flask"></i></div>
                         <h5>BA/BBS</h5>
                         <p>100+ Reviews</p>
-                    </div>
+                    </a>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Built for students -->
-    <section class="built-for">
+    <section class="built-for" id="about">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6">
@@ -111,14 +110,8 @@
                             <p>Our community helps flag unhelpful or abusive content to maintain quality.</p>
                         </div>
                     </div>
-                    <<<<<<< HEAD <a href="pages/search.php">
-                        <button class="btn btn-brand px-4 py-2 mt-2">Start Browsing Professors</button>
-                        </a>
-                        =======
+                <a href="pages/search.php" class="btn btn-brand px-4 py-2 mt-2">Start Browsing Professors</a>
 
-                        <a href="pages/search.php"><button class="btn btn-brand px-4 py-2 mt-2">Start Browsing
-                                Professors</button></a>
-                        >>>>>>> 9e3804f (register)
                 </div>
                 <div class="col-lg-6 d-none d-lg-block"></div>
             </div>

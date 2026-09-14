@@ -1,3 +1,33 @@
+<?php
+session_start();
+require_once __DIR__ . '/../config/dbconn.php';
+require_once __DIR__ . '/../includes/auth.php';
+
+$errorMessage = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['s_email'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    $student = null;
+    if (isKmcenEmail($email)) {
+        $statement = mysqli_prepare($conn, 'SELECT s_id, s_email, password_hash FROM students WHERE s_email = ? LIMIT 1');
+        mysqli_stmt_bind_param($statement, 's', $email);
+        mysqli_stmt_execute($statement);
+        $student = mysqli_fetch_assoc(mysqli_stmt_get_result($statement));
+        mysqli_stmt_close($statement);
+    }
+
+    if ($student && password_verify($password, $student['password_hash'])) {
+        session_regenerate_id(true);
+        $_SESSION['s_id'] = (int) $student['s_id'];
+        $_SESSION['s_email'] = $student['s_email'];
+        header('Location: search.php');
+        exit;
+    }
+
+    $errorMessage = 'Use your KMC email (@kmcen.edu.np) and correct password.';
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -40,11 +70,11 @@
             <h1 class="title">Welcome back</h1>
 
             <!-- Form -->
-            <form id="loginForm" novalidate>
+            <form id="loginForm" method="post" action="login.php" novalidate>
 
                 <div class="field-block">
                     <div class="field-header">
-                        <label for="schoolEmail" class="field-label">School Email or Username</label>
+                        <label for="schoolEmail" class="field-label">School Email</label>
                         <span class="field-tag">Institutional ID</span>
                     </div>
                     <div class="input-icon-wrap">
@@ -56,15 +86,15 @@
                                     stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
                             </svg>
                         </span>
-                        <input type="text" class="form-control" id="schoolEmail" placeholder="student@university.edu"
-                            required>
+                        <input type="email" class="form-control" id="schoolEmail" name="s_email" placeholder="student@kmcen.edu.np"
+                            pattern="^[^@\s]+@kmcen\.edu\.np$" required>
                     </div>
                 </div>
 
                 <div class="field-block">
                     <div class="field-header">
                         <label for="password" class="field-label">Password</label>
-                        <a href="#" class="field-link">Forgot password?</a>
+                        <a href="register.php" class="field-link">Create an account</a>
                     </div>
                     <div class="input-icon-wrap">
                         <span class="leading-icon">
@@ -74,7 +104,7 @@
                                 <path d="M5 7V4.5a3 3 0 0 1 6 0V7" stroke="currentColor" stroke-width="1.2" />
                             </svg>
                         </span>
-                        <input type="password" class="form-control" id="password" placeholder="••••••••" required
+                        <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required
                             style="padding-right:44px;">
                         <button type="button" class="toggle-visibility" id="togglePassword"
                             aria-label="Toggle password visibility">
@@ -95,6 +125,7 @@
                     </svg>
                 </button>
             </form>
+            <?php if ($errorMessage): ?><div class="alert alert-danger mt-3" role="alert"><?= htmlspecialchars($errorMessage) ?></div><?php endif; ?>
 
             <!-- Trust callout -->
             <div class="trust-callout">
@@ -114,7 +145,7 @@
 
             <!-- Sign up redirect -->
             <div class="signup-row">
-                Don't have an account? <a href="#">Sign up now</a>
+                Don't have an account? <a href="register.php">Sign up now</a>
             </div>
 
         </div>
@@ -124,7 +155,7 @@
         // Back
         document.getElementById('backBtn').addEventListener('click', () => {
             if (window.history.length > 1) window.history.back();
-            else alert('Back pressed — wire this up to your previous page/route.');
+            else window.location.href = 'search.php';
         });
 
         // Password visibility toggle
@@ -140,15 +171,12 @@
                 : '<path d="M1 8s2.7-5 7-5 7 5 7 5-2.7 5-7 5-7-5-7-5Z" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/>';
         });
 
-        // Basic client-side validation on submit
         document.getElementById('loginForm').addEventListener('submit', (e) => {
-            e.preventDefault();
             const form = e.target;
             if (!form.checkValidity()) {
+                e.preventDefault();
                 form.classList.add('was-validated');
-                return;
             }
-            alert('Signed in! (This is a front-end demo — hook this up to your backend.)');
         });
     </script>
 </body>

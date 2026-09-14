@@ -1,12 +1,193 @@
+<?php
+session_start();
+require_once __DIR__ . '/../config/dbconn.php';
+require_once __DIR__ . '/../includes/review_actions.php';
+
+if (empty($_SESSION['review_csrf'])) {
+  $_SESSION['review_csrf'] = bin2hex(random_bytes(32));
+}
+$reviewCsrf = $_SESSION['review_csrf'];
+
+$teacherId = filter_input(INPUT_GET, 't_id', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+if (!$teacherId) {
+  http_response_code(400);
+  exit('A valid teacher ID is required.');
+}
+
+$teacherStatement = mysqli_prepare($conn, 'SELECT t_id, t_name FROM teachers WHERE t_id = ?');
+mysqli_stmt_bind_param($teacherStatement, 'i', $teacherId);
+mysqli_stmt_execute($teacherStatement);
+$teacher = mysqli_fetch_assoc(mysqli_stmt_get_result($teacherStatement));
+mysqli_stmt_close($teacherStatement);
+
+if (!$teacher) {
+  http_response_code(404);
+  exit('Teacher not found.');
+}
+
+$studentId = $_SESSION['s_id'] ?? null;
+$actionMessage = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $actionResult = handleReviewAction($conn, $teacherId, $studentId, $reviewCsrf);
+  $actionMessage = $actionResult['success'] ?? $actionResult['error'] ?? '';
+}
+
+$subjectFilter = filter_input(INPUT_GET, 'subject_id', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null;
+$subjectOptionsStatement = mysqli_prepare($conn, "
+  SELECT s.subject_id, s.subject_name, s.course, s.semester
+  FROM subjects AS s
+  INNER JOIN teacher_subjects AS ts ON ts.subject_id = s.subject_id
+  WHERE ts.t_id = ?
+  ORDER BY s.semester, s.subject_name
+");
+mysqli_stmt_bind_param($subjectOptionsStatement, 'i', $teacherId);
+mysqli_stmt_execute($subjectOptionsStatement);
+$subjectOptionsResult = mysqli_stmt_get_result($subjectOptionsStatement);
+$subjectOptions = [];
+while ($subjectOption = mysqli_fetch_assoc($subjectOptionsResult)) {
+  $subjectOptions[] = $subjectOption;
+}
+mysqli_stmt_close($subjectOptionsStatement);
+$validSubjectIds = array_map(static fn ($subject) => (int) $subject['subject_id'], $subjectOptions);
+if ($subjectFilter !== null && !in_array($subjectFilter, $validSubjectIds, true)) {
+  $subjectFilter = null;
+}
+
+$reviewSort = $_GET['review_sort'] ?? 'recent';
+if (!in_array($reviewSort, ['recent', 'highest', 'lowest', 'helpful'], true)) {
+  $reviewSort = 'recent';
+}
+$reviewPage = max(1, (int) ($_GET['reviews_page'] ?? 1));
+$reviewsPerPage = 5;
+
+$reviewCountSql = 'SELECT COUNT(*) AS total FROM ratings WHERE t_id = ? AND status = \'Approved\'';
+$reviewCountTypes = 'i';
+$reviewCountParams = [$teacherId];
+if ($subjectFilter !== null) {
+  $reviewCountSql .= ' AND subject_id = ?';
+  $reviewCountTypes .= 'i';
+  $reviewCountParams[] = $subjectFilter;
+}
+$reviewCountStatement = mysqli_prepare($conn, $reviewCountSql);
+$reviewCountBindValues = [$reviewCountStatement, $reviewCountTypes];
+foreach ($reviewCountParams as $key => $value) {
+  $reviewCountBindValues[] = &$reviewCountParams[$key];
+}
+call_user_func_array('mysqli_stmt_bind_param', $reviewCountBindValues);
+mysqli_stmt_execute($reviewCountStatement);
+$totalReviewCount = (int) (mysqli_fetch_assoc(mysqli_stmt_get_result($reviewCountStatement))['total'] ?? 0);
+mysqli_stmt_close($reviewCountStatement);
+$totalReviewPages = max(1, (int) ceil($totalReviewCount / $reviewsPerPage));
+$reviewPage = min($reviewPage, $totalReviewPages);
+$reviewOffset = ($reviewPage - 1) * $reviewsPerPage;
+
+$summaryStatement = mysqli_prepare($conn, "
+  SELECT
+    AVG(quality_rating) AS average_quality,
+    AVG(difficulty_rating) AS average_difficulty,
+    COUNT(*) AS total_reviews,
+    COALESCE(SUM(take_again = 'yes') / NULLIF(COUNT(*), 0) * 100, 0) AS take_again_percentage
+  FROM ratings
+  WHERE t_id = ? AND status = 'Approved'
+");
+mysqli_stmt_bind_param($summaryStatement, 'i', $teacherId);
+mysqli_stmt_execute($summaryStatement);
+$summary = mysqli_fetch_assoc(mysqli_stmt_get_result($summaryStatement));
+mysqli_stmt_close($summaryStatement);
+
+$breakdown = array_fill(1, 5, 0);
+$breakdownStatement = mysqli_prepare($conn, "
+  SELECT quality_rating, COUNT(*) AS rating_count
+  FROM ratings
+  WHERE t_id = ? AND status = 'Approved'
+  GROUP BY quality_rating
+");
+mysqli_stmt_bind_param($breakdownStatement, 'i', $teacherId);
+$breakdownResult = null;
+mysqli_stmt_execute($breakdownStatement);
+$breakdownResult = mysqli_stmt_get_result($breakdownStatement);
+while ($row = mysqli_fetch_assoc($breakdownResult)) {
+  $rating = (int) $row['quality_rating'];
+  if ($rating >= 1 && $rating <= 5) {
+    $breakdown[$rating] = (int) $row['rating_count'];
+  }
+}
+mysqli_stmt_close($breakdownStatement);
+
+$reviewSql = "
+  SELECT r.r_id, r.quality_rating, r.review, r.review_date, s.subject_id, s.subject_name,
+         COUNT(DISTINCT hv.s_id) AS helpful_count,
+         MAX(CASE WHEN hv.s_id = ? THEN 1 ELSE 0 END) AS helpful_by_current_student
+  FROM ratings AS r
+  INNER JOIN subjects AS s ON s.subject_id = r.subject_id
+  LEFT JOIN rating_helpful_votes AS hv ON hv.r_id = r.r_id
+  WHERE r.t_id = ? AND r.status = 'Approved'";
+$reviewTypes = 'ii';
+$reviewParams = [$studentId ?? 0, $teacherId];
+if ($subjectFilter !== null) {
+  $reviewSql .= ' AND r.subject_id = ?';
+  $reviewTypes .= 'i';
+  $reviewParams[] = $subjectFilter;
+}
+$reviewOrder = match ($reviewSort) {
+  'highest' => 'r.quality_rating DESC, r.review_date DESC, r.r_id DESC',
+  'lowest' => 'r.quality_rating ASC, r.review_date DESC, r.r_id DESC',
+  'helpful' => 'helpful_count DESC, r.review_date DESC, r.r_id DESC',
+  default => 'r.review_date DESC, r.r_id DESC',
+};
+$reviewSql .= " GROUP BY r.r_id, r.quality_rating, r.review, r.review_date, s.subject_id, s.subject_name ORDER BY $reviewOrder LIMIT $reviewsPerPage OFFSET $reviewOffset";
+$reviewStatement = mysqli_prepare($conn, $reviewSql);
+$reviewBindValues = [$reviewStatement, $reviewTypes];
+foreach ($reviewParams as $key => $value) {
+  $reviewBindValues[] = &$reviewParams[$key];
+}
+call_user_func_array('mysqli_stmt_bind_param', $reviewBindValues);
+$reviewResult = null;
+mysqli_stmt_execute($reviewStatement);
+$reviewResult = mysqli_stmt_get_result($reviewStatement);
+$reviews = [];
+while ($row = mysqli_fetch_assoc($reviewResult)) {
+  $reviews[] = $row;
+}
+mysqli_stmt_close($reviewStatement);
+
+$courseStatement = mysqli_prepare($conn, "
+  SELECT course FROM subjects AS s
+  INNER JOIN ratings AS r ON r.subject_id = s.subject_id
+  WHERE r.t_id = ? AND r.status = 'Approved'
+  GROUP BY s.course
+  ORDER BY COUNT(*) DESC
+  LIMIT 1
+");
+mysqli_stmt_bind_param($courseStatement, 'i', $teacherId);
+$courseResult = null;
+mysqli_stmt_execute($courseStatement);
+$courseResult = mysqli_stmt_get_result($courseStatement);
+$course = mysqli_fetch_assoc($courseResult)['course'] ?? 'All courses';
+mysqli_stmt_close($courseStatement);
+
+$averageQuality = $summary['average_quality'] !== null ? number_format((float) $summary['average_quality'], 1) : '0.0';
+$averageDifficulty = $summary['average_difficulty'] !== null ? number_format((float) $summary['average_difficulty'], 1) : '0.0';
+$takeAgainPercentage = (int) round((float) ($summary['take_again_percentage'] ?? 0));
+$totalReviews = (int) ($summary['total_reviews'] ?? 0);
+$reviewQuery = $subjectFilter !== null ? '&subject_id=' . $subjectFilter : '';
+$reviewPageQuery = $reviewQuery . '&review_sort=' . urlencode($reviewSort);
+
+function reviewPageUrl(int $teacherId, int $page, string $subjectQuery, string $sort): string
+{
+  return 'professor-profile.php?t_id=' . $teacherId . $subjectQuery . '&review_sort=' . urlencode($sort) . '&reviews_page=' . $page;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sushil Ghimire · Rate My Teacher</title>
+<title><?= htmlspecialchars($teacher['t_name']) ?> · Rate My Teacher</title>
 
 <!-- Bootstrap CSS -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
 <link rel="stylesheet" href="../css/professor-profile.css">
 <!-- Bootstrap Icons (used as stand-ins for the Figma icon assets, which couldn't be downloaded in this environment) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
@@ -14,426 +195,30 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
 
-<style>
-  :root{
-    --brand-blue: #1b4ddb;
-    --ink: #1a1b24;
-    --body-text: #434655;
-    --muted: #747686;
-    --border: #c4c5d7;
-    --bg: #fbf8ff;
-    --footer-bg: #e2e1ee;
-    --search-bg: #f4f2ff;
-  }
-
-  body{
-    background-color: var(--bg);
-    color: var(--ink);
-    font-family: 'Inter', sans-serif;
-  }
-
-  h1, h2, h3, .brand-font{
-    font-family: 'Manrope', sans-serif;
-    font-weight: 800;
-  }
-
-  /* ---------- Header ---------- */
-  .site-header{
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background-color: rgba(251, 248, 255, 0.95);
-    backdrop-filter: blur(2px);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .brand-link{
-    color: var(--brand-blue);
-    font-weight: 800;
-    font-size: 1.5rem;
-    letter-spacing: -0.6px;
-    text-decoration: none;
-  }
-
-  .site-header .nav-link{
-    color: var(--body-text);
-    font-size: 1rem;
-    padding: 0;
-  }
-
-  .site-header .nav-link:hover{
-    color: var(--brand-blue);
-  }
-
-  .search-wrap{
-    position: relative;
-    width: 256px;
-  }
-
-  .search-wrap input{
-    background-color: var(--search-bg);
-    border: 1px solid var(--border);
-    border-radius: 9999px;
-    padding: 9px 17px 10px 41px;
-    font-size: 0.75rem;
-    width: 100%;
-  }
-
-  .search-wrap input:focus{
-    box-shadow: 0 0 0 0.15rem rgba(27,77,219,.2);
-    border-color: var(--brand-blue);
-  }
-
-  .search-wrap i{
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--muted);
-    font-size: 0.9rem;
-  }
-
-  .btn-brand{
-    background-color: var(--brand-blue);
-    color: #fff;
-    border-radius: 9999px;
-    font-weight: 700;
-    border: none;
-    white-space: nowrap;
-  }
-
-  .btn-brand:hover{
-    background-color: #163fae;
-    color: #fff;
-  }
-
-  /* ---------- Hero / professor header ---------- */
-  .eyebrow{
-    color: var(--brand-blue);
-    font-weight: 700;
-    font-size: 0.75rem;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-  }
-
-  .prof-name{
-    font-size: 4rem;
-    line-height: 1.1;
-    letter-spacing: -1.4px;
-    margin-bottom: 0;
-  }
-
-  .rating-card{
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
-    padding: 17px 25px 19px;
-    text-align: center;
-    min-width: 108px;
-  }
-
-  .rating-card .score{
-    color: var(--brand-blue);
-    font-size: 3rem;
-    font-weight: 700;
-    letter-spacing: -0.96px;
-    line-height: 1;
-  }
-
-  .rating-card .label{
-    color: var(--muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: -0.6px;
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
-
-  /* ---------- Stats bar ---------- */
-  .stats-bar{
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    padding: 33px 0;
-  }
-
-  .stats-bar .stat{
-    font-size: 1.25rem;
-    color: var(--ink);
-  }
-
-  /* ---------- Reviews ---------- */
-  .section-title{
-    font-size: 1.5rem;
-    font-weight: 800;
-  }
-
-  .sort-label{
-    color: var(--muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-
-  .sort-select{
-    border: none;
-    background: transparent;
-    color: var(--ink);
-    font-size: 1rem;
-    font-family: inherit;
-    padding-right: 4px;
-  }
-
-  .sort-select:focus{
-    outline: none;
-    box-shadow: none;
-  }
-
-  .review-card{
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
-    padding: 25px;
-  }
-
-  .review-course{
-    color: var(--brand-blue);
-    font-weight: 800;
-    font-size: 1.25rem;
-    margin-bottom: 0;
-  }
-
-  .review-date{
-    color: var(--muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .score-pill{
-    background-color: var(--brand-blue);
-    color: #fff;
-    font-weight: 700;
-    font-size: 1rem;
-    border-radius: 9999px;
-    padding: 4px 12px;
-    white-space: nowrap;
-    height: fit-content;
-  }
-
-  .review-meta{
-    color: var(--muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .review-meta strong{
-    color: var(--ink);
-    font-weight: 600;
-  }
-
-  .review-body{
-    color: var(--body-text);
-    font-size: 1rem;
-    line-height: 1.625;
-    margin-bottom: 0;
-  }
-
-  .review-footer{
-    border-top: 1px solid var(--border);
-    padding-top: 17px;
-  }
-
-  .helpful-btn, .report-btn{
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0;
-  }
-
-  .helpful-btn:hover, .report-btn:hover{
-    color: var(--brand-blue);
-  }
-
-  .helpful-btn.active{
-    color: var(--brand-blue);
-  }
-
-  .more-reviews-btn{
-    background: none;
-    border: none;
-    color: var(--brand-blue);
-    font-weight: 700;
-    font-size: 0.75rem;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-  }
-
-  /* ---------- Footer ---------- */
-  .site-footer{
-    background-color: var(--footer-bg);
-    border-top: 1px solid var(--border);
-    padding: 49px 0 48px;
-  }
-
-  .footer-brand{
-    color: var(--brand-blue);
-    font-weight: 800;
-    font-size: 1.5rem;
-  }
-
-  .footer-copy{
-    color: var(--body-text);
-    font-size: 0.75rem;
-    max-width: 320px;
-  }
-
-  .footer-heading{
-    color: var(--ink);
-    font-size: 0.75rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-  }
-
-  .footer-list{
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .footer-list li{
-    margin-bottom: 8px;
-  }
-
-  .footer-list a{
-    color: var(--body-text);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-decoration: none;
-  }
-
-  .footer-list a:hover{
-    color: var(--brand-blue);
-    text-decoration: underline;
-  }
-
-  /* ---------- Ratings breakdown ---------- */
-  .breakdown-card{
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
-    padding: 25px;
-  }
-
-  .breakdown-title{
-    font-size: 1.25rem;
-    font-weight: 800;
-    margin-bottom: 20px;
-  }
-
-  .breakdown-row{
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  .breakdown-row:last-child{
-    margin-bottom: 0;
-  }
-
-  .breakdown-label{
-    width: 56px;
-    flex-shrink: 0;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--body-text);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap;
-  }
-
-  .breakdown-label i{
-    color: #f4b400;
-    font-size: 0.75rem;
-  }
-
-  .breakdown-track{
-    flex: 1;
-    height: 10px;
-    background-color: #ececf5;
-    border-radius: 9999px;
-    overflow: hidden;
-  }
-
-  .breakdown-fill{
-    height: 100%;
-    background-color: var(--brand-blue);
-    border-radius: 9999px;
-    width: 0%;
-    transition: width .5s ease;
-  }
-
-  .breakdown-count{
-    width: 84px;
-    flex-shrink: 0;
-    text-align: right;
-    font-size: 0.8125rem;
-    color: var(--muted);
-    font-weight: 600;
-  }
-
-  @media (max-width: 767px){
-    .prof-name{ font-size: 2.5rem; }
-    .stats-bar .row > div{ margin-bottom: 1rem; }
-    .search-wrap{ display: none; }
-    .breakdown-count{ width: 64px; }
-  }
-</style>
 </head>
 <body>
 
-<!-- ============ HEADER ============ -->
-<header class="site-header">
-  <div class="container-xl">
-    <div class="d-flex align-items-center justify-content-between py-3">
-      <div class="d-flex align-items-center gap-4">
-        <a href="#" class="brand-link">Rate My Teacher</a>
-        <nav class="d-none d-md-flex gap-4">
-          <a href="#" class="nav-link">Browse</a>
-          <a href="#" class="nav-link">Top Lists</a>
-        </nav>
-      </div>
-      <div class="d-flex align-items-center gap-3">
-        <form class="search-wrap d-none d-sm-block" role="search" onsubmit="return false;">
-          <i class="bi bi-search"></i>
-          <input type="search" placeholder="Search professors..." aria-label="Search professors">
-        </form>
-        <button type="button" class="btn btn-brand px-3 py-2">Sign In</button>
-      </div>
-    </div>
-  </div>
-</header>
+<?php $basePath = '../'; include __DIR__ . '/../includes/navbar.php'; ?>
 
 <!-- ============ MAIN ============ -->
 <main class="container" style="max-width: 896px;">
   <div class="pt-5 pb-5">
 
+    <a href="search.php" class="back-link mb-4 d-inline-flex align-items-center gap-2">
+      <i class="bi bi-arrow-left"></i> Back to Search
+    </a>
+
     <!-- Professor header -->
     <section class="pb-4 mb-2">
-      <p class="eyebrow mb-3">Course: BCA</p>
+      <p class="eyebrow mb-3">Course: <?= htmlspecialchars($course) ?></p>
       <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
-        <h1 class="prof-name">Sushil Ghimire</h1>
+        <h1 class="prof-name"><?= htmlspecialchars($teacher['t_name']) ?></h1>
         <div class="d-flex align-items-center gap-3">
           <div class="rating-card">
-            <div class="score" id="overall-score">4.8</div>
+            <div class="score" id="overall-score"><?= $averageQuality ?></div>
             <div class="label">Overall</div>
           </div>
-          <a href="ratings.php" class="btn btn-brand px-4 py-3">Rate</a>
+          <a href="rating.php?t_id=<?= (int) $teacher['t_id'] ?>" class="btn btn-brand px-4 py-3">Rate</a>
         </div>
       </div>
     </section>
@@ -441,9 +226,9 @@
     <!-- Stats bar -->
     <section class="stats-bar">
       <div class="row text-center text-md-start">
-        <div class="col-12 col-md-4 stat">92% Would take again</div>
-        <div class="col-12 col-md-4 stat">3.2 Difficulty</div>
-        <div class="col-12 col-md-4 stat">42 Total Reviews</div>
+        <div class="col-12 col-md-4 stat"><?= $takeAgainPercentage ?>% Would take again</div>
+        <div class="col-12 col-md-4 stat"><?= $averageDifficulty ?> Difficulty</div>
+        <div class="col-12 col-md-4 stat"><?= $totalReviews ?> Total Reviews</div>
       </div>
     </section>
 
@@ -451,7 +236,7 @@
     <section class="pt-5">
       <div class="breakdown-card">
         <p class="breakdown-title mb-0">Rating Breakdown</p>
-        <div id="breakdownRows" data-counts="5:24,4:10,3:5,2:2,1:1">
+        <div id="breakdownRows" data-counts="5:<?= $breakdown[5] ?>,4:<?= $breakdown[4] ?>,3:<?= $breakdown[3] ?>,2:<?= $breakdown[2] ?>,1:<?= $breakdown[1] ?>">
           <!-- rows are rendered by JS from data-counts -->
         </div>
       </div>
@@ -459,122 +244,92 @@
 
     <!-- Reviews -->
     <section class="pt-5">
+      <?php if ($actionMessage && (($_POST['review_action'] ?? '') === 'report' || str_contains($actionMessage, 'could not') || str_contains($actionMessage, 'available'))): ?><div class="alert alert-info" role="alert"><?= htmlspecialchars($actionMessage) ?></div><?php endif; ?>
       <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
         <h2 class="section-title mb-0">Student Reviews</h2>
         <div class="d-flex align-items-center gap-2">
+          <form method="get" action="professor-profile.php" class="d-flex align-items-center gap-2">
+            <input type="hidden" name="t_id" value="<?= (int) $teacher['t_id'] ?>">
+            <label class="sort-label mb-0" for="subjectFilter">Subject:</label>
+            <select class="sort-select form-select-sm" id="subjectFilter" name="subject_id" onchange="this.form.submit()">
+              <option value="">All subjects</option>
+              <?php foreach ($subjectOptions as $subjectOption): ?>
+                <option value="<?= (int) $subjectOption['subject_id'] ?>" <?= $subjectFilter === (int) $subjectOption['subject_id'] ? 'selected' : '' ?>><?= htmlspecialchars($subjectOption['subject_name']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </form>
           <span class="sort-label">Sort:</span>
-          <select class="sort-select form-select-sm" id="sortSelect" aria-label="Sort reviews">
-            <option value="recent" selected>Recent</option>
-            <option value="highest">Highest Rated</option>
-            <option value="lowest">Lowest Rated</option>
-            <option value="helpful">Most Helpful</option>
-          </select>
+          <form method="get" action="professor-profile.php" class="d-flex">
+            <input type="hidden" name="t_id" value="<?= (int) $teacher['t_id'] ?>">
+            <?php if ($subjectFilter !== null): ?><input type="hidden" name="subject_id" value="<?= (int) $subjectFilter ?>"><?php endif; ?>
+            <input type="hidden" name="reviews_page" value="1">
+            <select class="sort-select form-select-sm" name="review_sort" id="sortSelect" aria-label="Sort reviews" onchange="this.form.submit()">
+              <option value="recent" <?= $reviewSort === 'recent' ? 'selected' : '' ?>>Recent</option>
+              <option value="highest" <?= $reviewSort === 'highest' ? 'selected' : '' ?>>Highest Rated</option>
+              <option value="lowest" <?= $reviewSort === 'lowest' ? 'selected' : '' ?>>Lowest Rated</option>
+              <option value="helpful" <?= $reviewSort === 'helpful' ? 'selected' : '' ?>>Most Helpful</option>
+            </select>
+          </form>
         </div>
       </div>
 
       <div class="d-flex flex-column gap-4" id="reviewsList">
-
-        <!-- Review 1 -->
-        <article class="review-card" data-rating="5.0" data-helpful="12" data-date="2024-01-12">
-          <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
-            <div>
-              <h3 class="review-course">CACS204: OOP in Java</h3>
-              <p class="review-date mb-0">Jan 12, 2024</p>
-            </div>
-            <span class="score-pill">5.0 / 5.0</span>
-          </div>
-          <div class="d-flex gap-2 review-meta mb-3">
-            <span>Grade: <strong>A+</strong></span>
-            <span>•</span>
-            <span>For Credit: <strong>Yes</strong></span>
-          </div>
-          <p class="review-body mb-3">
-            Sushil sir is incredible. His lectures are dense but he has a unique way of making abstract
-            theories feel tangible. He's always available during office hours and truly wants his students to succeed.
-            The exams are difficult, but if you attend every lecture and do the assignments, you'll be fine.
-          </p>
-          <div class="d-flex align-items-center justify-content-between review-footer">
-            <button type="button" class="helpful-btn d-flex align-items-center gap-1">
-              <i class="bi bi-hand-thumbs-up"></i>
-              <span class="helpful-count">Helpful (12)</span>
-            </button>
-            <button type="button" class="report-btn">Report</button>
-          </div>
-        </article>
-
-        <!-- Review 2 -->
-        <article class="review-card" data-rating="4.5" data-helpful="8" data-date="2023-12-04">
-          <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
-            <div>
-              <h3 class="review-course">CACS254: Scripting Languages</h3>
-              <p class="review-date mb-0">Dec 04, 2023</p>
-            </div>
-            <span class="score-pill">4.5 / 5.0</span>
-          </div>
-          <div class="d-flex gap-2 review-meta mb-3">
-            <span>Grade: <strong>B</strong></span>
-            <span>•</span>
-            <span>For Credit: <strong>Yes</strong></span>
-          </div>
-          <p class="review-body mb-3">
-            Great professor who actually cares about teaching. Sometimes the pace can be a bit fast, especially in
-            the second half of the semester.
-          </p>
-          <div class="d-flex align-items-center justify-content-between review-footer">
-            <button type="button" class="helpful-btn d-flex align-items-center gap-1">
-              <i class="bi bi-hand-thumbs-up"></i>
-              <span class="helpful-count">Helpful (8)</span>
-            </button>
-            <button type="button" class="report-btn">Report</button>
-          </div>
-        </article>
-
+        <?php if (!$reviews): ?>
+          <p class="text-muted">No public reviews yet.</p>
+        <?php else: ?>
+          <?php foreach ($reviews as $review): ?>
+            <article class="review-card" data-rating="<?= (int) $review['quality_rating'] ?>" data-helpful="<?= (int) $review['helpful_count'] ?>" data-date="<?= htmlspecialchars($review['review_date']) ?>">
+              <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                <div>
+                  <h3 class="review-course"><?= htmlspecialchars($review['subject_name']) ?></h3>
+                  <p class="review-date mb-0"><?= htmlspecialchars(date('M d, Y', strtotime($review['review_date']))) ?></p>
+                </div>
+                <span class="score-pill"><?= (int) $review['quality_rating'] ?>.0 / 5.0</span>
+              </div>
+              <p class="review-body mb-3"><?= nl2br(htmlspecialchars($review['review'] ?? '')) ?></p>
+              <div class="d-flex align-items-center justify-content-between review-footer">
+                <form method="post" action="professor-profile.php?t_id=<?= (int) $teacher['t_id'] ?><?= $reviewQuery ?>">
+                  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($reviewCsrf) ?>">
+                  <input type="hidden" name="r_id" value="<?= (int) $review['r_id'] ?>">
+                  <input type="hidden" name="review_action" value="helpful">
+                  <button type="submit" class="helpful-btn <?= $review['helpful_by_current_student'] ? 'active' : '' ?> d-flex align-items-center gap-1">
+                    <i class="bi bi-hand-thumbs-up"></i>
+                    <span>Helpful (<?= (int) $review['helpful_count'] ?>)</span>
+                  </button>
+                </form>
+                <form method="post" action="professor-profile.php?t_id=<?= (int) $teacher['t_id'] ?><?= $reviewQuery ?>" class="report-form">
+                  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($reviewCsrf) ?>">
+                  <input type="hidden" name="r_id" value="<?= (int) $review['r_id'] ?>">
+                  <input type="hidden" name="review_action" value="report">
+                  <input type="hidden" name="report_reason" value="">
+                  <button type="submit" class="report-btn">Report</button>
+                </form>
+              </div>
+            </article>
+          <?php endforeach; ?>
+        <?php endif; ?>
       </div>
 
-      <div class="text-center pt-4">
-        <button type="button" class="more-reviews-btn" id="moreReviewsBtn">More Reviews</button>
-      </div>
+      <?php if ($totalReviewPages > 1): ?>
+        <nav class="review-pagination" aria-label="Review pages">
+          <?php if ($reviewPage > 1): ?>
+            <a href="<?= htmlspecialchars(reviewPageUrl((int) $teacher['t_id'], $reviewPage - 1, $reviewQuery, $reviewSort)) ?>">Previous</a>
+          <?php endif; ?>
+          <?php for ($pageNumber = 1; $pageNumber <= $totalReviewPages; $pageNumber++): ?>
+            <a href="<?= htmlspecialchars(reviewPageUrl((int) $teacher['t_id'], $pageNumber, $reviewQuery, $reviewSort)) ?>" class="<?= $pageNumber === $reviewPage ? 'active' : '' ?>"><?= $pageNumber ?></a>
+          <?php endfor; ?>
+          <?php if ($reviewPage < $totalReviewPages): ?>
+            <a href="<?= htmlspecialchars(reviewPageUrl((int) $teacher['t_id'], $reviewPage + 1, $reviewQuery, $reviewSort)) ?>">Next</a>
+          <?php endif; ?>
+        </nav>
+      <?php endif; ?>
+
     </section>
 
   </div>
 </main>
 
-<!-- ============ FOOTER ============ -->
-<footer class="site-footer">
-  <div class="container-xl">
-    <div class="d-flex flex-column flex-md-row justify-content-between gap-4">
-      <div>
-        <p class="footer-brand mb-3">Rate My Teacher</p>
-        <p class="footer-copy mb-0">© 2026 Rate My Teacher Academic. All rights reserved.</p>
-      </div>
-      <div class="d-flex flex-wrap gap-5">
-        <div>
-          <p class="footer-heading">Platform</p>
-          <ul class="footer-list">
-            <li><a href="#">Browse</a></li>
-            <li><a href="#">Top Lists</a></li>
-            <li><a href="#">Schools</a></li>
-          </ul>
-        </div>
-        <div>
-          <p class="footer-heading">Legal</p>
-          <ul class="footer-list">
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Terms of Service</a></li>
-            <li><a href="#">Guidelines</a></li>
-          </ul>
-        </div>
-        <div>
-          <p class="footer-heading">Support</p>
-          <ul class="footer-list">
-            <li><a href="#">Help Center</a></li>
-            <li><a href="#">Contact Us</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</footer>
+<?php $basePath = '../'; include __DIR__ . '/../includes/footer.php'; ?>
 
 <!-- Bootstrap JS bundle (needed for the navbar) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -612,66 +367,15 @@
     });
   })();
 
-  // ---- Sort reviews ----
-  const sortSelect = document.getElementById('sortSelect');
-  const reviewsList = document.getElementById('reviewsList');
-
-  function sortReviews(mode){
-    const cards = Array.from(reviewsList.querySelectorAll('.review-card'));
-
-    cards.sort((a, b) => {
-      if (mode === 'highest') {
-        return parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating);
+  document.querySelectorAll('.report-form').forEach(form => {
+    form.addEventListener('submit', (event) => {
+      const reason = window.prompt('Why are you reporting this review?', 'Inappropriate or inaccurate content.');
+      if (!reason || !reason.trim()) {
+        event.preventDefault();
+        return;
       }
-      if (mode === 'lowest') {
-        return parseFloat(a.dataset.rating) - parseFloat(b.dataset.rating);
-      }
-      if (mode === 'helpful') {
-        return parseInt(b.dataset.helpful, 10) - parseInt(a.dataset.helpful, 10);
-      }
-      // 'recent' (default): newest date first
-      return new Date(b.dataset.date) - new Date(a.dataset.date);
+      form.querySelector('[name="report_reason"]').value = reason.trim();
     });
-
-    cards.forEach(card => reviewsList.appendChild(card));
-  }
-
-  sortSelect.addEventListener('change', (e) => sortReviews(e.target.value));
-
-  // ---- Helpful button toggle ----
-  document.querySelectorAll('.helpful-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const countSpan = btn.querySelector('.helpful-count');
-      const match = countSpan.textContent.match(/\d+/);
-      let count = match ? parseInt(match[0], 10) : 0;
-
-      if (btn.classList.contains('active')) {
-        count -= 1;
-        btn.classList.remove('active');
-      } else {
-        count += 1;
-        btn.classList.add('active');
-      }
-      countSpan.textContent = `Helpful (${count})`;
-    });
-  });
-
-  // ---- Report button (placeholder) ----
-  document.querySelectorAll('.report-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      alert('Thanks — this review has been flagged for moderator review.');
-    });
-  });
-
-  // ---- More Reviews (placeholder pagination hook) ----
-  document.getElementById('moreReviewsBtn').addEventListener('click', function () {
-    this.textContent = 'Loading...';
-    // Replace this with a real fetch() call to your PHP endpoint, e.g.:
-    // fetch(`/api/reviews.php?professor_id=123&page=2`).then(...)
-    setTimeout(() => {
-      this.textContent = 'No more reviews';
-      this.disabled = true;
-    }, 600);
   });
 
 </script>

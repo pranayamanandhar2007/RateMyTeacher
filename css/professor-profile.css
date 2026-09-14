@@ -145,6 +145,67 @@
     color: var(--ink);
   }
 
+  /* ---------- Rating breakdown ---------- */
+  .breakdown-card{
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+    padding: 24px;
+  }
+
+  .breakdown-title{
+    color: var(--ink);
+    font-size: 1rem;
+    font-weight: 800;
+    margin-bottom: 18px !important;
+  }
+
+  .breakdown-row{
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 82px;
+    align-items: center;
+    column-gap: 12px;
+    min-height: 28px;
+  }
+
+  .breakdown-label,
+  .breakdown-count{
+    color: var(--muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .breakdown-label{
+    text-align: right;
+  }
+
+  .breakdown-label i{
+    color: #f5b942;
+    font-size: 0.7rem;
+  }
+
+  .breakdown-track{
+    width: 100%;
+    height: 9px;
+    overflow: hidden;
+    background: #e8edf5;
+    border-radius: 999px;
+  }
+
+  .breakdown-fill{
+    width: 0;
+    height: 100%;
+    background: var(--brand-blue);
+    border-radius: inherit;
+    transition: width 500ms ease;
+  }
+
+  .breakdown-count{
+    text-align: left;
+  }
+
   /* ---------- Reviews ---------- */
   .section-title{
     font-size: 1.5rem;
@@ -220,6 +281,50 @@
     font-size: 1rem;
     line-height: 1.625;
     margin-bottom: 0;
+  }
+
+  .review-pagination{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 28px;
+  }
+
+  .review-pagination a{
+    min-width: 36px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--ink);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .review-pagination a:hover,
+  .review-pagination a.active{
+    background: var(--brand-blue);
+    border-color: var(--brand-blue);
+    color: #fff;
+  }
+
+  @media (max-width: 575.98px){
+    .breakdown-card{
+      padding: 18px 14px;
+    }
+
+    .breakdown-row{
+      grid-template-columns: 36px minmax(0, 1fr) 70px;
+      column-gap: 8px;
+    }
+
+    .breakdown-label,
+    .breakdown-count{
+      font-size: 0.75rem;
+    }
   }
 
   .review-footer{
