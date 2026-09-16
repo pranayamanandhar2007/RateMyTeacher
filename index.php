@@ -25,10 +25,10 @@
     <section class="hero">
         <div class="container text-center py-5 mt-3" style="max-width: 700px;">
             <h1 class="display-5 hero-title mb-4">Bring transparency to higher education.</h1>
-            <p class="hero-subtitle mb-4">Find your professor, read honest reviews, and share your own experiences.
+            <p class="hero-subtitle mb-4">Find your teacher, read honest reviews, and share your own experiences.
                 Simple, verified, and community-driven.</p>
             <form class="input-group rounded-pill hero-search mx-auto mb-4" style="max-width: 600px;" method="get" action="pages/search.php">
-                <input class="form-control" type="search" name="q" placeholder="Search for a professor or department" aria-label="Search teachers">
+                <input class="form-control" type="search" name="q" placeholder="Search for a teacher or department" aria-label="Search teachers">
                 <button class="btn btn-brand rounded-pill px-4 m-1" type="submit">Search</button>
             </form>
 
@@ -110,7 +110,7 @@
                             <p>Our community helps flag unhelpful or abusive content to maintain quality.</p>
                         </div>
                     </div>
-                <a href="pages/search.php" class="btn btn-brand px-4 py-2 mt-2">Start Browsing Professors</a>
+                <a href="pages/search.php" class="btn btn-brand px-4 py-2 mt-2">Start Browsing Teachers</a>
 
                 </div>
                 <div class="col-lg-6 d-none d-lg-block"></div>

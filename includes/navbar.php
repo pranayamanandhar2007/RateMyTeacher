@@ -23,7 +23,7 @@ $studentEmail = currentStudentEmail($conn);
                         <span class="account-email text-truncate" title="<?= htmlspecialchars($studentEmail) ?>"><?= htmlspecialchars($studentEmail) ?></span>
                         <a class="btn btn-logout px-3" href="<?= $basePath ?>pages/logout.php">Log out</a>
                     <?php else: ?>
-                        <a class="nav-link-custom text-decoration-none" href="<?= $basePath ?>pages/login.php">Sign In</a>
+                        <a class="nav-link-custom text-decoration-none" href="<?= $basePath ?>pages/login.php">Login</a>
                         <a class="btn btn-brand px-3" href="<?= $basePath ?>pages/register.php">Register</a>
                     <?php endif; ?>
                 </div>

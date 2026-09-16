@@ -373,7 +373,7 @@ footer p.copyright {
     text-decoration: none;
 }
 
-.professor-card {
+ .teacher-card {
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 1.3rem 1.5rem;
@@ -386,47 +386,47 @@ footer p.copyright {
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.professor-card:hover {
+ .teacher-card:hover {
     border-color: var(--brand);
     box-shadow: 0 6px 16px rgba(41, 82, 227, 0.08);
 }
 
-.professor-name {
+ .teacher-name {
     font-weight: 700;
     font-size: 1.05rem;
     margin-bottom: 0.1rem;
 }
 
-.professor-course {
+ .teacher-course {
     color: var(--ink);
     font-size: 0.95rem;
     margin-bottom: 0.35rem;
 }
 
-.professor-meta {
+ .teacher-meta {
     color: var(--muted);
     font-size: 0.88rem;
 }
 
-.professor-meta span+span {
+ .teacher-meta span+span {
     margin-left: 0.6rem;
     padding-left: 0.6rem;
     border-left: 1px solid var(--line);
 }
 
-.professor-rating {
+ .teacher-rating {
     text-align: right;
     min-width: 90px;
 }
 
-.professor-rating .score {
+ .teacher-rating .score {
     color: var(--brand);
     font-weight: 800;
     font-size: 1.5rem;
     line-height: 1;
 }
 
-.professor-rating .label {
+ .teacher-rating .label {
     color: var(--muted);
     font-size: 0.75rem;
     font-weight: 600;

@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Page header -->
     <section class="mb-4">
-      <a href="professor-profile.php?t_id=<?= (int) $teacher['t_id'] ?>" class="back-link mb-2">
+      <a href="teacher-profile.php?t_id=<?= (int) $teacher['t_id'] ?>" class="back-link mb-2">
         <i class="bi bi-arrow-left"></i> Back to Profile
       </a>
       <h1 class="page-title mt-2 mb-2">Rate <span class="prof-name"><?= htmlspecialchars($teacher['t_name']) ?></span></h1>
@@ -154,8 +154,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <!-- Take again -->
       <fieldset class="rate-fieldset">
-        <legend class="rate-legend mb-3">Would you take this professor again?</legend>
-        <div class="yesno-group" data-group="takeAgain" role="radiogroup" aria-label="Would you take this professor again?">
+        <legend class="rate-legend mb-3">Would you take this teacher again?</legend>
+        <div class="yesno-group" data-group="takeAgain" role="radiogroup" aria-label="Would you take this teacher again?">
           <input type="hidden" name="take_again" id="takeAgain">
           <button type="button" class="yesno-pill" data-value="yes">Yes</button>
           <button type="button" class="yesno-pill" data-value="no">No</button>
@@ -181,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           id="reviewText"
           name="review"
           class="review-textarea"
-          placeholder="Describe your experience with this professor..."
+          placeholder="Describe your experience with this teacher..."
           maxlength="1000"
         ></textarea>
         <div class="text-end mt-2">

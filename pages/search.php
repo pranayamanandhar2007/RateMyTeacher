@@ -17,7 +17,7 @@ function searchUrl(array $overrides = []): string
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Professors — Rate My Teacher</title>
+    <title>Search Teachers — Rate My Teacher</title>
 
     <!-- Bootstrap -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
@@ -115,16 +115,16 @@ function searchUrl(array $overrides = []): string
                             <p class="text-muted">No teachers found.</p>
                         <?php else: ?>
                             <?php foreach ($teachers as $teacher): ?>
-                                <a href="professor-profile.php?t_id=<?= (int) $teacher['t_id'] ?>" class="professor-card">
+                                <a href="teacher-profile.php?t_id=<?= (int) $teacher['t_id'] ?>" class="teacher-card">
                                     <div>
-                                        <div class="professor-name"><?= htmlspecialchars($teacher['t_name']) ?></div>
-                                        <div class="professor-course"><?= htmlspecialchars($teacher['course']) ?></div>
-                                        <div class="professor-meta">
+                                        <div class="teacher-name"><?= htmlspecialchars($teacher['t_name']) ?></div>
+                                        <div class="teacher-course"><?= htmlspecialchars($teacher['course']) ?></div>
+                                        <div class="teacher-meta">
                                             <span>Difficulty: <?= number_format((float) $teacher['average_difficulty'], 1) ?></span>
                                             <span><?= (int) round((float) $teacher['take_again_percentage']) ?>% would take again</span>
                                         </div>
                                     </div>
-                                    <div class="professor-rating">
+                                    <div class="teacher-rating">
                                         <div class="score"><?= number_format((float) $teacher['average_quality'], 1) ?></div>
                                         <div class="label">RATING</div>
                                     </div>

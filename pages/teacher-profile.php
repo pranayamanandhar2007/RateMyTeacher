@@ -175,7 +175,7 @@ $reviewPageQuery = $reviewQuery . '&review_sort=' . urlencode($reviewSort);
 
 function reviewPageUrl(int $teacherId, int $page, string $subjectQuery, string $sort): string
 {
-  return 'professor-profile.php?t_id=' . $teacherId . $subjectQuery . '&review_sort=' . urlencode($sort) . '&reviews_page=' . $page;
+  return 'teacher-profile.php?t_id=' . $teacherId . $subjectQuery . '&review_sort=' . urlencode($sort) . '&reviews_page=' . $page;
 }
 ?>
 <!DOCTYPE html>
@@ -188,7 +188,7 @@ function reviewPageUrl(int $teacherId, int $page, string $subjectQuery, string $
 <!-- Bootstrap CSS -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="../css/style.css">
-<link rel="stylesheet" href="../css/professor-profile.css">
+<link rel="stylesheet" href="../css/teacher-profile.css">
 <!-- Bootstrap Icons (used as stand-ins for the Figma icon assets, which couldn't be downloaded in this environment) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 <!-- Google Fonts: Manrope (headings) + Inter (body) to match the Figma type styles -->
@@ -208,7 +208,7 @@ function reviewPageUrl(int $teacherId, int $page, string $subjectQuery, string $
       <i class="bi bi-arrow-left"></i> Back to Search
     </a>
 
-    <!-- Professor header -->
+    <!-- Teacher header -->
     <section class="pb-4 mb-2">
       <p class="eyebrow mb-3">Course: <?= htmlspecialchars($course) ?></p>
       <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
@@ -248,7 +248,7 @@ function reviewPageUrl(int $teacherId, int $page, string $subjectQuery, string $
       <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
         <h2 class="section-title mb-0">Student Reviews</h2>
         <div class="d-flex align-items-center gap-2">
-          <form method="get" action="professor-profile.php" class="d-flex align-items-center gap-2">
+          <form method="get" action="teacher-profile.php" class="d-flex align-items-center gap-2">
             <input type="hidden" name="t_id" value="<?= (int) $teacher['t_id'] ?>">
             <label class="sort-label mb-0" for="subjectFilter">Subject:</label>
             <select class="sort-select form-select-sm" id="subjectFilter" name="subject_id" onchange="this.form.submit()">
@@ -259,7 +259,7 @@ function reviewPageUrl(int $teacherId, int $page, string $subjectQuery, string $
             </select>
           </form>
           <span class="sort-label">Sort:</span>
-          <form method="get" action="professor-profile.php" class="d-flex">
+          <form method="get" action="teacher-profile.php" class="d-flex">
             <input type="hidden" name="t_id" value="<?= (int) $teacher['t_id'] ?>">
             <?php if ($subjectFilter !== null): ?><input type="hidden" name="subject_id" value="<?= (int) $subjectFilter ?>"><?php endif; ?>
             <input type="hidden" name="reviews_page" value="1">
@@ -288,7 +288,7 @@ function reviewPageUrl(int $teacherId, int $page, string $subjectQuery, string $
               </div>
               <p class="review-body mb-3"><?= nl2br(htmlspecialchars($review['review'] ?? '')) ?></p>
               <div class="d-flex align-items-center justify-content-between review-footer">
-                <form method="post" action="professor-profile.php?t_id=<?= (int) $teacher['t_id'] ?><?= $reviewQuery ?>">
+                <form method="post" action="teacher-profile.php?t_id=<?= (int) $teacher['t_id'] ?><?= $reviewQuery ?>">
                   <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($reviewCsrf) ?>">
                   <input type="hidden" name="r_id" value="<?= (int) $review['r_id'] ?>">
                   <input type="hidden" name="review_action" value="helpful">
@@ -297,7 +297,7 @@ function reviewPageUrl(int $teacherId, int $page, string $subjectQuery, string $
                     <span>Helpful (<?= (int) $review['helpful_count'] ?>)</span>
                   </button>
                 </form>
-                <form method="post" action="professor-profile.php?t_id=<?= (int) $teacher['t_id'] ?><?= $reviewQuery ?>" class="report-form">
+                <form method="post" action="teacher-profile.php?t_id=<?= (int) $teacher['t_id'] ?><?= $reviewQuery ?>" class="report-form">
                   <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($reviewCsrf) ?>">
                   <input type="hidden" name="r_id" value="<?= (int) $review['r_id'] ?>">
                   <input type="hidden" name="review_action" value="report">

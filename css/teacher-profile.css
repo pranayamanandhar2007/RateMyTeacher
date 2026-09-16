@@ -79,7 +79,7 @@
   .btn-brand{
     background-color: var(--brand-blue);
     color: #fff;
-    border-radius: 9999px;
+    border-radius: 12px;
     font-weight: 700;
     border: none;
     white-space: nowrap;
@@ -90,7 +90,7 @@
     color: #fff;
   }
 
-  /* ---------- Hero / professor header ---------- */
+  /* ---------- Hero / teacher header ---------- */
   .eyebrow{
     color: var(--brand-blue);
     font-weight: 700;
