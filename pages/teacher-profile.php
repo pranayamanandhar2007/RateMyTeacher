@@ -52,6 +52,13 @@ $validSubjectIds = array_map(static fn ($subject) => (int) $subject['subject_id'
 if ($subjectFilter !== null && !in_array($subjectFilter, $validSubjectIds, true)) {
   $subjectFilter = null;
 }
+$selectedSubjectName = 'Overall';
+foreach ($subjectOptions as $subjectOption) {
+  if ($subjectFilter === (int) $subjectOption['subject_id']) {
+    $selectedSubjectName = $subjectOption['subject_name'];
+    break;
+  }
+}
 
 $reviewSort = $_GET['review_sort'] ?? 'recent';
 if (!in_array($reviewSort, ['recent', 'highest', 'lowest', 'helpful'], true)) {
@@ -81,28 +88,38 @@ $totalReviewPages = max(1, (int) ceil($totalReviewCount / $reviewsPerPage));
 $reviewPage = min($reviewPage, $totalReviewPages);
 $reviewOffset = ($reviewPage - 1) * $reviewsPerPage;
 
-$summaryStatement = mysqli_prepare($conn, "
+$summarySql = "
   SELECT
     AVG(quality_rating) AS average_quality,
     AVG(difficulty_rating) AS average_difficulty,
     COUNT(*) AS total_reviews,
     COALESCE(SUM(take_again = 'yes') / NULLIF(COUNT(*), 0) * 100, 0) AS take_again_percentage
   FROM ratings
-  WHERE t_id = ? AND status = 'Approved'
-");
-mysqli_stmt_bind_param($summaryStatement, 'i', $teacherId);
+  ";
+$summarySql .= $subjectFilter !== null ? ' WHERE t_id = ? AND subject_id = ? AND status = \'Approved\'' : ' WHERE t_id = ? AND status = \'Approved\'';
+$summaryStatement = mysqli_prepare($conn, $summarySql);
+if ($subjectFilter !== null) {
+  mysqli_stmt_bind_param($summaryStatement, 'ii', $teacherId, $subjectFilter);
+} else {
+  mysqli_stmt_bind_param($summaryStatement, 'i', $teacherId);
+}
 mysqli_stmt_execute($summaryStatement);
 $summary = mysqli_fetch_assoc(mysqli_stmt_get_result($summaryStatement));
 mysqli_stmt_close($summaryStatement);
 
 $breakdown = array_fill(1, 5, 0);
-$breakdownStatement = mysqli_prepare($conn, "
+$breakdownSql = "
   SELECT quality_rating, COUNT(*) AS rating_count
   FROM ratings
-  WHERE t_id = ? AND status = 'Approved'
-  GROUP BY quality_rating
-");
-mysqli_stmt_bind_param($breakdownStatement, 'i', $teacherId);
+";
+$breakdownSql .= $subjectFilter !== null ? ' WHERE t_id = ? AND subject_id = ? AND status = \'Approved\'' : ' WHERE t_id = ? AND status = \'Approved\'';
+$breakdownSql .= ' GROUP BY quality_rating';
+$breakdownStatement = mysqli_prepare($conn, $breakdownSql);
+if ($subjectFilter !== null) {
+  mysqli_stmt_bind_param($breakdownStatement, 'ii', $teacherId, $subjectFilter);
+} else {
+  mysqli_stmt_bind_param($breakdownStatement, 'i', $teacherId);
+}
 $breakdownResult = null;
 mysqli_stmt_execute($breakdownStatement);
 $breakdownResult = mysqli_stmt_get_result($breakdownStatement);
@@ -210,9 +227,11 @@ function reviewPageUrl(int $teacherId, int $page, string $subjectQuery, string $
 
     <!-- Teacher header -->
     <section class="pb-4 mb-2">
-      <p class="eyebrow mb-3">Course: <?= htmlspecialchars($course) ?></p>
       <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
-        <h1 class="prof-name"><?= htmlspecialchars($teacher['t_name']) ?></h1>
+        <div>
+          <h1 class="prof-name"><?= htmlspecialchars($teacher['t_name']) ?></h1>
+          <span class="scope-tag"><?= htmlspecialchars($selectedSubjectName) ?></span>
+        </div>
         <div class="d-flex align-items-center gap-3">
           <div class="rating-card">
             <div class="score" id="overall-score"><?= $averageQuality ?></div>
