@@ -81,7 +81,7 @@ CREATE TABLE rating_reports (
 
 -- Sample admin
 INSERT INTO admin (username, password)
-VALUES ('admin', 'admin123');
+VALUES ('admin', '$2y$10$Ca08QsncrUb76pdaQUzsTeerJNs38mlQxbHiTLGFJvPxtdANH6Jpe');
 
 -- Demo data for local development and testing.
 INSERT INTO teachers (t_id, t_name) VALUES
